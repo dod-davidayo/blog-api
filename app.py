@@ -1,13 +1,23 @@
 from flask import Flask
 from config.config import Config
 from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
+
+# import db and migrate from extensions
+from extensions import db, migrate
+
+
+from routes.auth import auth_bp    # import auth blueprint
+# from routes.posts import posts_bp  # import posts blueprint
+
+
 
 # initalize extension
 app = Flask(__name__)
 
-db = SQLAlchemy()
-migrate = Migrate(app, db) # alembic migration tool
+app.register_blueprint(auth_bp)   # register auth blueprint
+
+
+
 
 # load config
 # app.config.from_object(Config)
