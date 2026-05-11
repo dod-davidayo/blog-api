@@ -12,4 +12,13 @@ class User(db.Model):
     user_role = db.Column(db.String(20), nullable=False, default='user')
 
     # one user to many relationship with posts
-    posts = db.relationship('Post', backref='author', lazy=True)
+    posts = db.relationship('Post', backref='author', lazy=True)\
+    
+    # Seralizer to convert user object to dictionary do not expose password hash
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "username": self.username,
+            "email": self.email,
+            "user_role": self.user_role
+        }

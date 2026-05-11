@@ -5,7 +5,7 @@ import re # regular expression module for passwor validation
 from extensions import db
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 
-#routes
+#routes for authentication (register, login, protected route)
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 def validate_password(password):
     """Validate the password against the following criteria"""
@@ -27,6 +27,8 @@ def validate_password(password):
 @auth_bp.route("/register", methods=["POST"])
 def register():
     data = request.get_json()
+    if not data:
+        return jsonify({"error":"No input data provided"}), 400
     username = data.get("username")
     email = data.get("email")
     password = data.get("password")
@@ -90,16 +92,15 @@ def login():
     access_token = create_access_token(identity=str(user.id))
     return jsonify({"Message": "Login successful", 
                     "access_token": access_token,
-                    "user_id": {
-                        "id": user.id,
-                        "username": user.username,
-                        "email": user.email,
-                    }}), 200
+                    "user_id": user.to_dict()}), 200
 
 # protected route
 @auth_bp.route("/protected", methods=["GET"])
 @jwt_required()
 def protected():
-    current_user_id = get_jwt_identity() # get user id from token
-    user = User.query.get(current_user_id) # get user from database
+    current_user_id = int(get_jwt_identity()) # get user id from token
+    user = db.session.get(User, current_user_id) # get user from database
+    if not user:
+        return jsonify({"error": "User not found"}), 404
     return jsonify({"message": f"Hello, {user.username}! This is a protected route."}), 200
+
