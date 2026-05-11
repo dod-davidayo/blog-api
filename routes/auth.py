@@ -3,7 +3,7 @@ from models.users import User
 from werkzeug.security import generate_password_hash, check_password_hash   #for password hashing
 import re # regular expression module for passwor validation
 from extensions import db
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, create_refresh_token
 
 #routes for authentication (register, login, protected route)
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
@@ -88,11 +88,14 @@ def login():
     
 
     
-    # create access token/ jwt token
+    # create access token/ refresh token and return it to the client
     access_token = create_access_token(identity=str(user.id))
+    refresh_token = create_refresh_token(identity=str(user.id))
     return jsonify({"Message": "Login successful", 
                     "access_token": access_token,
+                    "refresh_token": refresh_token,
                     "user_id": user.to_dict()}), 200
+    
 
 # protected route
 @auth_bp.route("/protected", methods=["GET"])

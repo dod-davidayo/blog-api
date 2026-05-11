@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from models.post import Post
 from extensions import db
-from flask_jwt_extended import  jwt_required, get_jwt_identity
+from flask_jwt_extended import  create_access_token, jwt_required, get_jwt_identity
 
 # routes for posts (create, read, update, delete)
 posts_bp = Blueprint("posts", __name__, url_prefix="/posts")
@@ -105,3 +105,32 @@ def delete_post(post_id):
     db.session.commit()
 
     return jsonify({"message": "Post deleted successfully"}), 200
+
+# admin deleting a post
+@posts_bp.route("/admin/<int:post_id>", methods=["DELETE"])
+@jwt_required()
+def admin_delete_post(post_id):
+    post = db.session.get(Post, post_id)
+
+    if not post:
+        return jsonify({"error": "Post not found"}), 404
+
+    # check if the current user is an admin
+    current_user_id = int(get_jwt_identity())
+    from models.users import User
+    user = db.session.get(User, current_user_id)
+    if user.user_role != 'admin':
+        return jsonify({"error": "Unauthorized to delete this post"}), 403
+
+    # delete the post
+    db.session.delete(post)
+    db.session.commit()
+
+    return jsonify({"message": "Post deleted successfully by admin"}), 200
+
+# refresh token route
+@posts_bp.route("/refresh", methods=["POST"])
+def refresh_token():
+    current_user_id = get_jwt_identity()
+    new_access_token = create_access_token(identity=current_user_id)
+    return jsonify({"access_token": new_access_token}), 200
